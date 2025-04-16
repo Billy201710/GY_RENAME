@@ -3,6 +3,7 @@
 
 import os
 from PySide6.QtCore import QObject, Signal, Slot
+from PySide6.QtWidgets import QFileDialog
 
 from models.file_model import FileModel, FileItem
 
@@ -154,3 +155,31 @@ class FileController(QObject):
             files (list): 当前文件项列表
         """
         pass
+    
+    def browse_files(self):
+        """
+        打开文件浏览对话框，选择文件
+        
+        Returns:
+            list: 选择的文件数据列表
+        """
+        # 获取之前使用的目录，如果不存在则使用用户目录
+        last_dir = self.config_manager.get_last_directory() or os.path.expanduser("~")
+        
+        # 打开文件对话框
+        file_paths, _ = QFileDialog.getOpenFileNames(
+            None,
+            "选择文件",
+            last_dir,
+            "所有文件 (*.*)"
+        )
+        
+        # 如果选择了文件，保存目录
+        if file_paths:
+            dir_path = os.path.dirname(file_paths[0])
+            self.config_manager.set_last_directory(dir_path)
+            
+            # 添加文件
+            return self.add_files(file_paths)
+        
+        return []

@@ -6,7 +6,7 @@ from PySide6.QtWidgets import (
     QPushButton, QHBoxLayout, QAbstractItemView, QMenu, QMessageBox
 )
 from PySide6.QtCore import Qt, Signal, QMimeData, QUrl
-from PySide6.QtGui import QDrag, QMouseEvent, QContextMenuEvent
+from PySide6.QtGui import QDrag, QMouseEvent, QContextMenuEvent, QPixmap
 
 class FileListWidget(QWidget):
     """
@@ -32,6 +32,7 @@ class FileListWidget(QWidget):
         self.title = title
         self.accept_drops = accept_drops
         self.with_edit_button = with_edit_button
+        self.is_result_list = False  # 标记是否为结果列表
         
         # 存储文件列表的字典 {file_name: file_data}
         self.files = {}
@@ -45,11 +46,8 @@ class FileListWidget(QWidget):
         """
         # 创建主布局
         main_layout = QVBoxLayout(self)
-        
-        # 创建标题标签
-        title_label = QLabel(self.title)
-        title_label.setAlignment(Qt.AlignCenter)
-        title_label.setStyleSheet("font-weight: bold; font-size: 16px;")
+        main_layout.setContentsMargins(0, 0, 0, 0)
+        main_layout.setSpacing(0)
         
         # 创建文件列表控件
         self.file_list = QListWidget()
@@ -57,19 +55,16 @@ class FileListWidget(QWidget):
         self.file_list.setAcceptDrops(self.accept_drops)
         self.file_list.setDropIndicatorShown(self.accept_drops)
         self.file_list.setSelectionMode(QAbstractItemView.ExtendedSelection)
+        self.file_list.setAlternatingRowColors(True)
+        self.file_list.setHorizontalScrollBarPolicy(Qt.ScrollBarAlwaysOff)
         
         # 如果接受拖放，连接相关事件
         if self.accept_drops:
             self.setAcceptDrops(True)
             self.file_list.setDragDropMode(QAbstractItemView.DropOnly)
         
-        # 添加标题和列表到主布局
-        main_layout.addWidget(title_label)
+        # 添加列表到主布局
         main_layout.addWidget(self.file_list)
-        
-        # 设置边距和间距
-        main_layout.setContentsMargins(5, 5, 5, 5)
-        main_layout.setSpacing(5)
     
     def add_files(self, files):
         """
@@ -89,37 +84,78 @@ class FileListWidget(QWidget):
             self.files[file_name] = file_data
             
             # 创建列表项
-            item = QListWidgetItem(file_name)
+            item = QListWidgetItem()
             item.setData(Qt.UserRole, file_data)
             
-            # 如果需要编辑按钮，创建自定义小部件
-            if self.with_edit_button:
-                # 创建小部件
-                item_widget = QWidget()
-                layout = QHBoxLayout(item_widget)
-                
-                # 创建标签和按钮
-                label = QLabel(file_name)
-                edit_button = QPushButton("Edit")
-                edit_button.setMaximumWidth(60)
-                
-                # 连接按钮信号
-                edit_button.clicked.connect(lambda checked, name=file_name: self.edit_button_clicked.emit(name))
-                
-                # 添加到布局
-                layout.addWidget(label)
-                layout.addWidget(edit_button)
-                layout.setContentsMargins(5, 2, 5, 2)
-                
-                # 设置列表项和小部件
-                self.file_list.addItem(item)
-                self.file_list.setItemWidget(item, item_widget)
-                
-                # 调整项高度
-                item.setSizeHint(item_widget.sizeHint())
+            # 创建列表项小部件
+            self._create_item_widget(item, file_data)
+    
+    def _create_item_widget(self, item, file_data):
+        """
+        创建列表项小部件
+        
+        Args:
+            item: 列表项
+            file_data: 文件数据
+        """
+        file_name = file_data.get('name', '')
+        
+        # 创建小部件
+        item_widget = QWidget()
+        layout = QHBoxLayout(item_widget)
+        layout.setContentsMargins(5, 2, 5, 2)
+        
+        # 创建文件图标标签
+        file_icon_label = QLabel()
+        file_icon_label.setObjectName("fileIcon")
+        file_icon_label.setPixmap(QPixmap("assets/icons/normal/file.png").scaled(20, 20, Qt.KeepAspectRatio, Qt.SmoothTransformation))
+        layout.addWidget(file_icon_label)
+        
+        # 如果需要编辑按钮，创建自定义小部件
+        if self.with_edit_button:
+            # 创建标签
+            label = QLabel(file_name)
+            label.setObjectName("fileName")
+            
+            # 创建编辑按钮
+            edit_button = QPushButton("Edit")
+            edit_button.setObjectName("editButton")
+            edit_button.setFixedWidth(60)
+            
+            # 连接按钮信号
+            edit_button.clicked.connect(lambda checked, name=file_name: self.edit_button_clicked.emit(name))
+            
+            # 添加到布局
+            layout.addWidget(label, 1)  # 让标签占据剩余空间
+            layout.addWidget(edit_button)
+        else:
+            # 创建文件名标签
+            label = QLabel(file_name)
+            
+            # 如果是结果列表，设置特殊样式
+            if self.is_result_list:
+                label.setObjectName("resultFileName")
             else:
-                # 直接添加文本项
-                self.file_list.addItem(item)
+                label.setObjectName("fileName")
+            
+            # 添加到布局
+            layout.addWidget(label, 1)  # 让标签占据剩余空间
+        
+        # 设置列表项和小部件
+        self.file_list.addItem(item)
+        self.file_list.setItemWidget(item, item_widget)
+        
+        # 调整项高度
+        item.setSizeHint(item_widget.sizeHint())
+    
+    def set_as_result_list(self, is_result=True):
+        """
+        设置为结果列表
+        
+        Args:
+            is_result (bool): 是否为结果列表
+        """
+        self.is_result_list = is_result
     
     def update_file(self, file_name, new_data):
         """
@@ -142,18 +178,19 @@ class FileListWidget(QWidget):
             item = self.file_list.item(i)
             item_data = item.data(Qt.UserRole)
             
-            if item_data.get('name') == file_name:
-                # 如果有自定义部件
-                if self.with_edit_button:
-                    widget = self.file_list.itemWidget(item)
-                    if widget:
-                        label = widget.findChild(QLabel)
-                        if label and 'new_name' in new_data:
-                            label.setText(new_data['new_name'])
-                else:
-                    # 直接更新文本
-                    if 'new_name' in new_data:
-                        item.setText(new_data['new_name'])
+            if item_data and item_data.get('name') == file_name:
+                # 获取自定义部件
+                widget = self.file_list.itemWidget(item)
+                if widget:
+                    # 查找文件名标签
+                    labels = widget.findChildren(QLabel)
+                    if labels and len(labels) > 1:  # 第一个是图标，第二个是文件名
+                        if 'new_name' in new_data:
+                            labels[1].setText(new_data['new_name'])
+                            # 如果是结果列表，设置特殊样式
+                            if self.is_result_list:
+                                labels[1].setObjectName("resultFileName")
+                                labels[1].setStyle(labels[1].style())  # 强制样式刷新
                 
                 # 更新项数据
                 item.setData(Qt.UserRole, self.files[file_name])
@@ -266,3 +303,8 @@ class FileListWidget(QWidget):
         # 从列表中删除
         row = self.file_list.row(item)
         self.file_list.takeItem(row)
+        
+        # 如果是最后一个列表项，显示空白提示
+        if self.file_list.count() == 0:
+            # 这里可以添加空列表提示，但由于设计需要，我们暂时保持空白
+            pass

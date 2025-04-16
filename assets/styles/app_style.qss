@@ -1,0 +1,762 @@
+/* GY_Rename应用程序样式表 */
+
+/* 全局样式 */
+* {
+    font-family: "Microsoft YaHei", sans-serif;
+    color: #f0f0f0;
+}
+
+QMainWindow,
+QDialog {
+    background-color: #121212;  /* 更深的背景色 */
+}
+
+/* 主窗口样式 */
+QMainWindow {
+    border: 1px solid #333333;
+}
+
+/* 自定义标题栏样式 */
+QWidget#titleBar {
+    background-color: #121212;
+    border-bottom: 1px solid #333333;
+    min-height: 36px;
+    max-height: 36px;
+}
+
+QLabel#appIconLabel, QLabel#gearIconLabel {
+    padding: 3px;
+}
+
+QLabel#appTitleLabel {
+    font-size: 16px;
+    font-weight: bold;
+    padding-left: 5px;
+    color: #f0c040;  /* 金色标题 */
+}
+
+/* 标题栏按钮样式 */
+QPushButton#pinButton,
+QPushButton#minButton,
+QPushButton#maxRestoreButton,
+QPushButton#closeButton {
+    background-color: transparent;
+    border: none;
+    border-radius: 0px;
+    padding: 4px;
+    margin: 0px;
+    icon-size: 16px;
+}
+
+QPushButton#pinButton:hover,
+QPushButton#minButton:hover,
+QPushButton#maxRestoreButton:hover {
+    background-color: #3a3a3a;
+}
+
+QPushButton#closeButton:hover {
+    background-color: #e81123;
+}
+
+QPushButton#pinButton:pressed,
+QPushButton#minButton:pressed,
+QPushButton#maxRestoreButton:pressed {
+    background-color: #505050;
+}
+
+QPushButton#closeButton:pressed {
+    background-color: #bf0f1d;
+}
+
+/* 工具栏样式 */
+QToolBar {
+    background-color: #121212;
+    border: none;
+    padding: 5px;
+    spacing: 3px;
+    min-height: 40px;
+    border-bottom: 1px solid #333333;
+}
+
+QToolBar::separator {
+    background-color: #333333;
+    width: 1px;
+    margin: 0 5px;
+}
+
+QToolButton {
+    border: none;
+    background-color: transparent;
+    border-radius: 4px;
+    padding: 3px;
+}
+
+QToolButton:hover {
+    background-color: #333333;
+}
+
+QToolButton:pressed {
+    background-color: #444444;
+}
+
+/* 工具栏标签样式 */
+QLabel#logoLabel {
+    padding: 2px;
+    margin-right: 10px;
+}
+
+QLabel#toolbarStep {
+    background-color: #e8c056;
+    color: #1e1e1e;
+    font-weight: bold;
+    border-radius: 10px;
+    min-width: 20px;
+    max-width: 20px;
+    min-height: 20px;
+    max-height: 20px;
+    padding: 0px;
+    text-align: center;
+}
+
+QLabel#toolbarOriginalFiles {
+    color: #e8c056;
+    font-weight: bold;
+}
+
+QLabel#toolbarExampleFiles {
+    color: #d2b48c;
+    font-weight: bold;
+}
+
+QLabel#toolbarAnalysisFiles {
+    color: #2e8b57;
+    font-weight: bold;
+}
+
+/* 按钮样式 */
+QPushButton {
+    background-color: #d2b48c;
+    color: #1e1e1e;
+    border: none;
+    border-radius: 4px;
+    padding: 5px 15px;
+    min-height: 25px;
+    font-weight: bold;
+}
+
+QPushButton:hover {
+    background-color: #e6c99f;
+}
+
+QPushButton:pressed {
+    background-color: #c0a070;
+}
+
+QPushButton:disabled {
+    background-color: #a0a0a0;
+    color: #505050;
+}
+
+/* 编辑按钮特殊样式 */
+QPushButton#editButton {
+    background-color: #d4a76a;  /* 棕色 */
+    color: white;
+    border-radius: 4px;
+    padding: 3px 10px;
+    min-height: 22px;
+    font-weight: bold;
+    font-size: 12px;
+}
+
+QPushButton#editButton:hover {
+    background-color: #e0b376;
+}
+
+QPushButton#editButton:pressed {
+    background-color: #c09660;
+}
+
+/* 分析按钮样式 */
+QPushButton#analyzeButton {
+    background-color: #207966;
+    color: white;
+    border: none;
+    border-radius: 4px;
+    padding: 6px 12px;
+    font-weight: bold;
+    min-width: 80px;
+}
+
+QPushButton#analyzeButton:hover {
+    background-color: #127560;
+}
+
+QPushButton#analyzeButton:pressed {
+    background-color: #15498f;
+}
+
+/* 确认按钮特殊样式 */
+QPushButton#confirmButton {
+    background-color: #2e8b57;
+    color: white;
+    border: none;
+    border-radius: 0px;
+    padding: 8px 15px;
+    font-weight: bold;
+    font-size: 16px;
+}
+
+QPushButton#confirmButton:hover {
+    background-color: #267349;
+}
+
+QPushButton#confirmButton:pressed {
+    background-color: #1e5e39;
+}
+
+/* 导航按钮特殊样式 */
+QToolButton#navigationButton {
+    background-color: #207966;
+    border: none;
+    border-radius: 4px;
+    padding: 6px 12px;
+}
+
+QToolButton#navigationButton:hover {
+    background-color: #1a6352;
+}
+
+QToolButton#navigationButton:pressed {
+    background-color: #166050;
+}
+
+/* 设置按钮特殊样式 */
+QToolButton#settingButton {
+    background-color: transparent;
+    border: none;
+    border-radius: 4px;
+    padding: 2px;
+}
+
+/* 设置按钮悬停样式,不显示方形按钮 */
+QToolButton#settingButton:hover {
+    /* 设置按钮悬停样式,不显示方形按钮 */
+    border: none;
+    background-color: transparent;
+}
+
+/* 使用伪状态选择器来处理图标切换 */
+QToolButton#settingButton:hover {
+    image: url(assets/icons/hover/setting.png);
+}
+
+QToolButton#settingButton:pressed {
+    background-color: rgba(255, 255, 255, 0.2);
+}
+
+
+/* 清空按钮特殊样式 */
+QPushButton#clearButton {
+    background-color: #cd5c5c;
+    color: white;
+    border: none;
+    border-radius: 0px;
+    padding: 8px 15px;
+    font-weight: bold;
+    font-size: 16px;
+}
+
+QPushButton#clearButton:hover {
+    background-color: #c14949;
+}
+
+QPushButton#clearButton:pressed {
+    background-color: #a83b3b;
+}
+
+/* 列表控件样式 */
+QListWidget {
+    background-color: #121212;  /* 深黑色背景 */
+    border: none;
+    border-radius: 0px;
+    padding: 5px;
+    alternate-background-color: #181818;
+}
+
+QListWidget::item {
+    border-bottom: 1px solid #2a2a2a;
+    padding: 5px;
+    min-height: 30px; /* 增加行高 */
+}
+
+QListWidget::item:selected {
+    background-color: #3a5070;
+    border: 1px solid #4a6080;
+}
+
+QListWidget::item:hover:not([selected]) {
+    background-color: #202020;
+}
+
+/* 滚动条样式 */
+QScrollBar:vertical {
+    border: none;
+    background: #2a2a2a;
+    width: 8px;
+    margin: 0;
+    border-radius: 4px;
+}
+
+QScrollBar::handle:vertical {
+    background: #505050;
+    min-height: 30px;
+    border-radius: 4px;
+}
+
+QScrollBar::handle:vertical:hover {
+    background: #606060;
+}
+
+QScrollBar::add-line:vertical,
+QScrollBar::sub-line:vertical {
+    height: 0px;
+}
+
+QScrollBar::add-page:vertical,
+QScrollBar::sub-page:vertical {
+    background: none;
+}
+
+/* 标签样式 */
+QLabel {
+    color: #f0f0f0;
+}
+
+QLabel#titleLabel {
+    font-weight: bold;
+    font-size: 16px;
+    color: #f0f0f0;
+    padding: 5px;
+    border-bottom: 1px solid #3a3a3a;
+}
+
+/* 原始文件列表标题 */
+QLabel#originalFilesTitle {
+    color: #1e1e1e;
+    font-weight: bold;
+    padding: 4px 8px;
+}
+
+/* 命名示范列表标题 */
+QLabel#exampleFilesTitle {
+    color: #1e1e1e;
+    font-weight: bold;
+    padding: 4px 8px;
+}
+
+/* 命名分析列表标题 */
+QLabel#analysisFilesTitle {
+    color: #1e1e1e;
+    font-weight: bold;
+    padding: 4px 8px;
+}
+
+/* 表头样式 */
+QWidget#originalFilesHeader {
+    background-color: #f0c040; /* 金色 */
+    border-top-left-radius: 0px;
+    border-top-right-radius: 0px;
+    padding: 5px;
+    min-height: 40px;
+}
+
+QWidget#exampleFilesHeader {
+    background-color: #d4a76a; /* 棕色 */
+    border-top-left-radius: 0px;
+    border-top-right-radius: 0px;
+    padding: 5px;
+    min-height: 40px;
+}
+
+QWidget#analysisFilesHeader {
+    background-color: #4CAF50; /* 绿色 */
+    border-top-left-radius: 0px;
+    border-top-right-radius: 0px;
+    padding: 5px;
+    min-height: 40px;
+}
+
+/* 步骤容器样式 */
+QWidget#stepContainer {
+    background-color: transparent;
+    min-height: 30px;
+    padding: 0px;
+}
+
+/* 分析按钮容器 */
+QWidget#analyzeContainer {
+    background-color: transparent;
+}
+
+/* 工具按钮容器 */
+QWidget#toolsContainer {
+    background-color: transparent;
+    min-height: 30px;
+    padding: 0px;
+}
+
+/* 工具按钮样式 */
+QWidget#toolsContainer QToolButton {
+    background-color: transparent;
+    border: none;
+    border-radius: 3px;
+    padding: 3px;
+    margin: 0px 2px;
+    icon-size: 20px;
+}
+
+QWidget#toolsContainer QToolButton:hover {
+    background-color: rgba(255, 255, 255, 0.3);
+}
+
+QWidget#toolsContainer QToolButton:pressed {
+    background-color: rgba(0, 0, 0, 0.1);
+}
+
+/* 步骤编号样式 */
+QLabel#stepNumber {
+    background-color: white;
+    color: black;
+    border-radius: 12px;
+    min-width: 24px;
+    min-height: 24px;
+    max-width: 24px;
+    max-height: 24px;
+    font-weight: bold;
+    font-size: 14px;
+}
+
+/* 步骤标签样式 */
+QLabel#stepLabel {
+    color: white;
+    font-weight: bold;
+    font-size: 16px;
+    padding-left: 8px;
+}
+
+/* 表头箭头样式 */
+QLabel#headerArrow {
+    margin: 0px 8px;
+    font-size: 28px;
+    color: #4a86e8;
+    font-weight: bold;
+}
+
+/* 表头工具按钮样式 */
+QToolButton#headerToolButton {
+    background-color: transparent;
+    border: none;
+    padding: 5px;
+    margin: 2px;
+}
+
+QToolButton#headerToolButton:hover {
+    background-color: rgba(255, 255, 255, 0.2);
+    border-radius: 3px;
+}
+
+/* 状态栏样式 */
+QStatusBar {
+    background-color: #2d2d2d;
+    color: #a0a0a0;
+    border-top: 1px solid #3a3a3a;
+}
+
+/* 底部按钮栏样式 */
+QWidget#bottomBar {
+    background-color: #121212;
+}
+
+/* 容器样式 */
+QWidget#originalFilesContainer {
+    background-color: #1e1e1e;
+}
+
+QWidget#exampleFilesContainer {
+    background-color: #1e1e1e;
+}
+
+QWidget#analysisFilesContainer {
+    background-color: #1e1e1e;
+}
+
+/* 导航区域样式 */
+QWidget#navWidget {
+    background-color: transparent;
+    padding: 0px;
+}
+
+QWidget#stepWidget {
+    background-color: transparent;
+    border-radius: 4px;
+}
+
+QWidget#stepWidget:hover {
+    background-color: rgba(255, 255, 255, 0.1);
+}
+
+QLabel#stepNumber {
+    background-color: #e8c056;
+    color: #1e1e1e;
+    font-weight: bold;
+    border-radius: 10px;
+    min-width: 20px;
+    max-width: 20px;
+    min-height: 20px;
+    max-height: 20px;
+    padding: 0px;
+    text-align: center;
+}
+
+QLabel#stepLabel {
+    font-weight: bold;
+    color: #e8c056;
+}
+
+/* 工具栏按钮样式 */
+QToolButton#historyButton,
+QToolButton#toolButton {
+    background-color: transparent;
+    border: none;
+    border-radius: 3px;
+    padding: 3px;
+}
+
+QToolButton#historyButton:hover,
+QToolButton#toolButton:hover {
+    background-color: rgba(255, 255, 255, 0.1);
+}
+
+QToolButton#historyButton:pressed,
+QToolButton#toolButton:pressed {
+    background-color: rgba(255, 255, 255, 0.2);
+}
+
+/* 底部编号样式 */
+QLabel#bottomNumber {
+    background-color: white;
+    color: black;
+    border-radius: 13px;
+    min-width: 26px;
+    min-height: 26px;
+    max-width: 26px;
+    max-height: 26px;
+    font-weight: bold;
+    font-size: 15px;
+}
+
+/* 分割器样式 */
+QSplitter::handle {
+    background-color: #121212;  /* 与背景相同 */
+    width: 1px;
+}
+
+QSplitter::handle:hover {
+    background-color: #2a2a2a;
+}
+
+/* 文件图标样式 */
+QLabel#fileIcon {
+    min-width: 24px;
+    max-width: 24px;
+    min-height: 24px;
+    max-height: 24px;
+}
+
+/* 文件名标签样式 */
+QLabel#fileName {
+    color: #f0f0f0;
+    font-size: 14px;
+}
+
+/* 结果文件名标签样式 */
+QLabel#resultFileName {
+    color: #4CAF50;  /* 绿色文本 */
+    font-size: 14px;
+}
+
+/* 输入框样式 */
+QLineEdit {
+    background-color: white;
+    color: #000000;
+    border: 1px solid #888888;
+    border-radius: 4px;
+    padding: 5px;
+    selection-background-color: #4a86e8;
+}
+
+/* 下拉框样式 */
+QComboBox {
+    background-color: white;
+    color: #000000;
+    border: 1px solid #888888;
+    border-radius: 4px;
+    padding: 5px;
+    min-height: 25px;
+}
+
+QComboBox:hover {
+    border-color: #aaaaaa;
+}
+
+QComboBox::drop-down {
+    subcontrol-origin: padding;
+    subcontrol-position: center right;
+    width: 20px;
+    border-left-width: 1px;
+    border-left-color: #888888;
+    border-left-style: solid;
+}
+
+QComboBox::down-arrow {
+    width: 8px;
+    height: 8px;
+    border: 2px solid #606060;
+    border-width: 0 2px 2px 0;
+    transform: rotate(45deg);
+    margin-top: -3px;
+}
+
+QComboBox QAbstractItemView {
+    border: 1px solid #888888;
+    background-color: white;
+    color: #000000;
+    selection-background-color: #4a86e8;
+    selection-color: white;
+}
+
+QComboBox QLineEdit {
+    color: #000000;
+    background-color: white;
+}
+
+/* 设置对话框特定样式 */
+QDialog {
+    background-color: #121212;
+}
+
+QDialog QLabel {
+    color: #f0f0f0;
+}
+
+QDialog QLabel[styleSheet*="color: gray"] {
+    color: #aaaaaa;
+}
+
+QDialog QLabel[styleSheet*="color: #2E8B57"] {
+    color: #2E8B57;
+}
+
+/* 确保对话框表单标签文字为白色 */
+QFormLayout QLabel {
+    color: #f0f0f0;
+}
+
+
+QDialogButtonBox QPushButton {
+    color: #1e1e1e;
+} 
+
+/* 设置对话框特定样式，添加内联样式到QSS文件 */
+
+/* 设置对话框标题样式 */
+QDialog QLabel#titleLabel {
+    font-size: 18px; 
+    font-weight: bold; 
+    color: #2E8B57;
+}
+
+/* 设置对话框确定按钮样式 */
+QDialogButtonBox QPushButton[text="确定"] {
+    background-color: #2E8B57;
+    color: white;
+    border: none;
+    border-radius: 4px;
+    padding: 8px 16px;
+    font-weight: bold;
+    min-width: 80px;
+}
+
+QDialogButtonBox QPushButton[text="确定"]:hover {
+    background-color: #267349;
+}
+
+QDialogButtonBox QPushButton[text="确定"]:pressed {
+    background-color: #1e5e39;
+}
+
+/* 设置对话框取消按钮样式 - 增加特异性使其更容易覆盖默认样式 */
+QDialog QDialogButtonBox QPushButton[text="取消"] {
+    background-color: #cd5c5c !important; /* 使用!important提高优先级 */
+    color: white !important;
+    border: none;
+    border-radius: 4px;
+    padding: 8px 16px;
+    min-width: 80px;
+    font-weight: bold;
+}
+
+QDialog QDialogButtonBox QPushButton[text="取消"]:hover {
+    background-color: #d87070 !important;
+}
+
+QDialog QDialogButtonBox QPushButton[text="取消"]:pressed {
+    background-color: #b04545 !important;
+}
+
+/* 设置对话框说明标签样式 */
+QDialog QLabel#apiInfoLabel {
+    color: #2E8B57; 
+    background-color: rgba(46, 139, 87, 0.1); 
+    padding: 8px; 
+    border-radius: 4px;
+}
+
+/* 设置按钮鼠标样式 */
+QDialogButtonBox {
+    cursor: pointer;
+} 
+
+/* 设置对话框描述标签样式 */
+QDialog QLabel#descriptionLabel {
+    color: gray;
+}
+
+/* 设置对话框输入控件样式 */
+QLineEdit#apiKeyEdit, QLineEdit#apiUrlEdit {
+    background-color: white;
+    color: #000000;
+    border: 1px solid #888888;
+    border-radius: 4px;
+    padding: 5px;
+    selection-background-color: #4a86e8;
+}
+
+/* 设置对话框下拉框样式 */
+QComboBox#apiProviderComboBox, QComboBox#apiModelComboBox {
+    background-color: white;
+    color: #000000;
+    border: 1px solid #888888;
+    border-radius: 4px;
+    padding: 5px;
+    min-height: 25px;
+}
+
+/* 调整按钮盒子样式 */
+QDialogButtonBox#dialogButtonBox {
+    margin-top: 15px;
+} 
+
+
+
+

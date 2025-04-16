@@ -249,9 +249,33 @@ class RenameController(QObject):
         获取当前分析结果
         
         Returns:
-            dict: 当前重命名映射，如果没有则返回空字典
+            dict: 当前分析结果，是一个从原始文件名到新文件名的映射
         """
         return self.rename_model.get_current_rename_map()
+    
+    def get_previous_analysis_result(self):
+        """
+        获取上一个分析结果
+        
+        Returns:
+            dict: 上一个分析结果，是一个从原始文件名到新文件名的映射，如果没有则返回None
+        """
+        # 转到上一个历史记录
+        if self.rename_model.go_to_previous():
+            return self.rename_model.get_current_rename_map()
+        return None
+    
+    def get_next_analysis_result(self):
+        """
+        获取下一个分析结果
+        
+        Returns:
+            dict: 下一个分析结果，是一个从原始文件名到新文件名的映射，如果没有则返回None
+        """
+        # 转到下一个历史记录
+        if self.rename_model.go_to_next():
+            return self.rename_model.get_current_rename_map()
+        return None
     
     # 私有方法，处理信号
     def _on_example_updated(self, original_name, new_data):

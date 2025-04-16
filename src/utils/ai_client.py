@@ -26,7 +26,8 @@ class AIClient(QObject):
         """
         super().__init__(parent)
         self.config_manager = config_manager
-        self.client = httpx.AsyncClient(timeout=30.0)  # 设置30秒超时
+        # 创建异步HTTP客户端，设置30秒超时
+        self.client = httpx.AsyncClient(timeout=30.0)
     
     async def analyze_naming_pattern(self, original_files, example_files):
         """
@@ -53,7 +54,7 @@ class AIClient(QObject):
             
             # 构建请求数据
             payload = {
-                "model": api_model or "default_model",
+                "model": api_model or "deepseek-chat",
                 "messages": [
                     {
                         "role": "system",
@@ -65,6 +66,7 @@ class AIClient(QObject):
                     }
                 ],
                 "temperature": 0.3,  # 较低的温度以获得更一致的结果
+                "response_format": {"type": "json_object"}  # 使用DeepSeek的JSON输出功能
             }
             
             # 发送API请求
@@ -83,7 +85,7 @@ class AIClient(QObject):
             response.raise_for_status()
             result = response.json()
             
-            # 处理API返回结果
+            # 处理DeepSeek API返回结果
             processed_result = self._process_api_response(result, original_files)
             
             # 发出分析完成信号

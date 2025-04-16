@@ -99,3 +99,21 @@ class ConfigManager(QObject):
         """
         self.config['first_run'] = False
         self.save_config()
+        
+    def get_last_directory(self):
+        """
+        获取最后使用的目录路径
+        
+        Returns:
+            str: 最后使用的目录路径，如果不存在则返回None
+        """
+        return self.settings.value('app/last_directory', None)
+    
+    def set_last_directory(self, directory):
+        """
+        设置最后使用的目录路径
+        
+        Args:
+            directory (str): 目录路径
+        """
+        self.settings.setValue('app/last_directory', directory)

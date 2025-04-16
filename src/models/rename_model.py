@@ -246,14 +246,15 @@ class RenameModel(QObject):
         
         return {}
     
-    @Slot(str, str)
-    def add_example(self, original_name, new_name):
+    @Slot(str, str, bool)
+    def add_example(self, original_name, new_name, emit_signal=True):
         """
         添加重命名示例
         
         Args:
             original_name (str): 原始文件名
             new_name (str): 新文件名
+            emit_signal (bool): 是否发出信号
             
         Returns:
             bool: 如果成功添加返回True，否则返回False
@@ -264,8 +265,9 @@ class RenameModel(QObject):
         # 更新示例映射
         self._examples[original_name] = new_name
         
-        # 发出信号
-        self.exampleUpdated.emit(original_name, {'new_name': new_name})
+        # 发出信号（如果需要）
+        if emit_signal:
+            self.exampleUpdated.emit(original_name, {'new_name': new_name})
         
         return True
     

@@ -7,7 +7,7 @@ from PySide6.QtWidgets import (
     QPushButton, QLabel, QToolBar, QMessageBox,
     QSplitter, QStatusBar, QApplication, QSizePolicy, QToolButton
 )
-from PySide6.QtCore import Qt, Slot, QSize, QFile, QTextStream, QPoint
+from PySide6.QtCore import Qt, Slot, QSize, QFile, QTextStream, QPoint, QTimer
 from PySide6.QtGui import QIcon, QAction, QPixmap, QMouseEvent
 from PySide6.QtWidgets import QSpacerItem
 
@@ -353,6 +353,16 @@ class MainWindow(QMainWindow):
         self.original_files_widget.files_dropped.connect(self.file_controller.add_files)
         self.file_controller.files_added.connect(self.original_files_widget.add_files)
         self.file_controller.files_added.connect(self._update_step1_completed)
+        # 当原始文件列表更新时，同步更新示例列表，添加对应的Edit按钮
+        self.file_controller.files_added.connect(self._sync_example_files)
+        
+        # 设置三个列表的联动关系
+        self.original_files_widget.sync_with([self.example_files_widget, self.analysis_files_widget])
+        self.example_files_widget.sync_with([self.original_files_widget, self.analysis_files_widget])
+        self.analysis_files_widget.sync_with([self.original_files_widget, self.example_files_widget])
+        
+        # 连接分割器信号
+        self._connect_splitter_signals()
         
         # 重命名相关连接
         self.example_files_widget.edit_button_clicked.connect(self.rename_controller.edit_example)
@@ -517,16 +527,37 @@ class MainWindow(QMainWindow):
         """
         最大化/还原按钮点击处理
         """
-        if self.isMaximized():
+        was_maximized = self.isMaximized()
+        
+        if was_maximized:
             self.showNormal()
             self.max_restore_button.setIcon(QIcon("assets/icons/normal/Maximize.png"))
             self.max_restore_button.setToolTip("最大化")
+            
+            # 窗口还原时添加额外刷新逻辑，确保Edit按钮正确缩放
+            QTimer.singleShot(50, self._refresh_example_list)
+            QTimer.singleShot(150, self._refresh_example_list)
+            QTimer.singleShot(300, self._refresh_example_list)
+            QTimer.singleShot(500, self._refresh_example_list)
         else:
             self.showMaximized()
             self.max_restore_button.setIcon(QIcon("assets/icons/normal/unmaximize.png"))
             self.max_restore_button.setToolTip("还原")
+            
+        # 立即刷新列表项布局
+        QTimer.singleShot(10, self._refresh_example_list)
+        # 添加多个延迟刷新，确保在窗口动画完成后多次刷新界面
+        QTimer.singleShot(100, self._refresh_example_list)
+        QTimer.singleShot(200, self._refresh_example_list)
+        QTimer.singleShot(500, self._refresh_example_list)
+        
+        # 通过模拟分割器移动事件触发更彻底的刷新
+        QTimer.singleShot(150, self._simulate_splitter_move)
+        
+        # 强制刷新整个应用程序
+        QTimer.singleShot(300, lambda: QApplication.processEvents())
     
-    @Slot(bool)
+    @Slot()
     def _on_pin_action(self, checked):
         """
         固定按钮点击处理
@@ -595,7 +626,21 @@ class MainWindow(QMainWindow):
         # 判断是否在标题栏上双击
         title_bar = self.findChild(QWidget, "titleBar")
         if title_bar and title_bar.geometry().contains(event.pos()):
+            # 记录状态变化前是否处于最大化状态
+            was_maximized = self.isMaximized()
+            
+            # 直接调用最大化/还原处理函数，其中已包含完整的刷新逻辑
             self._on_max_restore_clicked()
+            
+            # 额外添加刷新逻辑，确保双击特别处理
+            QTimer.singleShot(300, self._simulate_splitter_move)
+            QTimer.singleShot(400, self._refresh_example_list)
+            QTimer.singleShot(600, self._refresh_example_list)
+            
+            # 如果是从最大化状态还原，添加更多刷新以确保Edit按钮正确缩放
+            if was_maximized:
+                QTimer.singleShot(700, self._refresh_example_list)
+                QTimer.singleShot(900, self._refresh_example_list)
         
         # 调用父类方法
         super().mouseDoubleClickEvent(event)
@@ -1038,3 +1083,116 @@ class MainWindow(QMainWindow):
         """
         # 可以在此处添加额外的视觉效果，表示分析完成
         pass
+
+    def _sync_example_files(self, files):
+        """
+        同步更新示例文件列表，只添加Edit按钮
+        """
+        self.example_files_widget.add_edit_button_only(files)
+        self.status_bar.showMessage("已同步更新示例文件列表")
+
+    def resizeEvent(self, event):
+        """
+        窗口大小变化事件处理
+        当窗口大小变化时，确保所有列表项和按钮正确调整大小
+        """
+        super().resizeEvent(event)
+        
+        # 强制刷新示例文件列表中的Edit按钮
+        # 延迟10毫秒执行，确保布局完成初步调整
+        QTimer.singleShot(10, self._refresh_example_list)
+        
+    def _refresh_example_list(self):
+        """
+        刷新示例文件列表，确保Edit按钮大小正确
+        """
+        # 获取当前文件列表
+        for i in range(self.example_files_widget.file_list.count()):
+            item = self.example_files_widget.file_list.item(i)
+            widget = self.example_files_widget.file_list.itemWidget(item)
+            
+            # 如果有小部件，强制其更新布局
+            if widget:
+                # 更新布局
+                widget.updateGeometry()
+                widget.layout().invalidate()
+                widget.layout().activate()
+
+                # 获取Edit按钮并更新其大小策略
+                for j in range(widget.layout().count()):
+                    child_widget = widget.layout().itemAt(j).widget()
+                    if isinstance(child_widget, QPushButton) and child_widget.objectName() == "editButton":
+                        # 重新设置其大小策略
+                        child_widget.setSizePolicy(QSizePolicy.Expanding, QSizePolicy.Fixed)
+                        # 移除临时显示按钮的代码，始终保持按钮隐藏状态
+                        child_widget.setVisible(False)
+                        # 强制更新
+                        child_widget.updateGeometry()
+                        
+                # 强制重绘小部件
+                widget.repaint()
+                
+        # 强制重绘整个文件列表
+        self.example_files_widget.file_list.repaint()
+
+    def _connect_splitter_signals(self):
+        """
+        连接分割器的信号以处理大小变化
+        """
+        # 连接分割器的splitterMoved信号，在分割器移动后刷新列表
+        self.file_lists_splitter.splitterMoved.connect(self._on_splitter_moved)
+        
+        # 添加分割器移动后强制同步列表滚动的连接
+        self.file_lists_splitter.splitterMoved.connect(self._force_sync_list_scrolling)
+    
+    def _force_sync_list_scrolling(self):
+        """
+        强制同步列表滚动
+        当分割器大小变化时调用，确保所有列表显示相同区域
+        """
+        # 获取第一列的当前滚动值
+        if self.original_files_widget and self.original_files_widget.file_list:
+            scroll_value = self.original_files_widget.file_list.verticalScrollBar().value()
+            
+            # 手动触发滚动同步
+            self.original_files_widget._sync_scroll(scroll_value)
+            self.example_files_widget._sync_scroll(scroll_value)
+            self.analysis_files_widget._sync_scroll(scroll_value)
+
+    def _on_splitter_moved(self, pos, index):
+        """
+        分割器移动处理，确保Edit按钮正确调整大小
+        
+        Args:
+            pos: 位置
+            index: 分割器索引
+        """
+        # 分割器移动后，立即刷新例列表布局
+        QTimer.singleShot(10, self._refresh_example_list)
+        # 添加多次延迟刷新以确保界面正确更新
+        QTimer.singleShot(50, self._refresh_example_list)
+        QTimer.singleShot(200, self._refresh_example_list)
+        
+        # 在分割器移动完成后，确保列表滚动同步
+        QTimer.singleShot(100, self._force_sync_list_scrolling)
+        QTimer.singleShot(300, self._force_sync_list_scrolling)
+
+    def _simulate_splitter_move(self):
+        """
+        模拟分割器移动事件，触发更彻底的刷新
+        """
+        # 获取当前分割器大小
+        current_sizes = self.file_lists_splitter.sizes()
+        if len(current_sizes) >= 3:
+            # 临时稍微调整分割器大小
+            temp_sizes = list(current_sizes)
+            # 稍微调整中间列的大小
+            temp_sizes[1] += 1
+            temp_sizes[2] -= 1
+            self.file_lists_splitter.setSizes(temp_sizes)
+            
+            # 然后立即恢复原来的大小
+            QTimer.singleShot(10, lambda: self.file_lists_splitter.setSizes(current_sizes))
+            
+            # 刷新界面
+            QTimer.singleShot(20, self._refresh_example_list)

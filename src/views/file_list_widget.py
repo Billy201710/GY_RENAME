@@ -4,7 +4,7 @@
 from PySide6.QtWidgets import (
     QWidget, QVBoxLayout, QLabel, QListWidget, QListWidgetItem,
     QPushButton, QHBoxLayout, QAbstractItemView, QMenu, QMessageBox,
-    QTextEdit, QFileDialog, QApplication
+    QTextEdit, QFileDialog, QApplication, QSizePolicy
 )
 from PySide6.QtCore import Qt, Signal, QMimeData, QUrl, QSize, QEvent, QPoint
 from PySide6.QtGui import QDrag, QMouseEvent, QContextMenuEvent, QPixmap, QFont, QKeyEvent, QCursor
@@ -40,6 +40,9 @@ class FileListWidget(QWidget):
         
         # 存储文件列表的字典 {file_name: file_data}
         self.files = {}
+        
+        # 存储同步的文件列表控件
+        self.synced_lists = []
         
         # 创建UI
         self._create_ui()
@@ -365,10 +368,13 @@ class FileListWidget(QWidget):
         
         # 创建小部件
         item_widget = QWidget()
+        # 设置鼠标悬停时显示手型光标 - 应用到整个项目
+        item_widget.setCursor(Qt.PointingHandCursor)
         layout = QHBoxLayout(item_widget)
-        # 修改布局边距，确保内容不会被遮挡
-        layout.setContentsMargins(10, 8, 10, 8)  # 增加垂直内边距
-        layout.setSpacing(10)  # 增加元素间间距
+        
+        # 确保各列表项高度一致 - 使用固定高度
+        layout.setContentsMargins(10, 8, 10, 8)  # 统一的内边距
+        layout.setSpacing(10)  # 统一的元素间距
         layout.setAlignment(Qt.AlignVCenter)  # 垂直居中对齐
         
         # 创建文件图标标签
@@ -398,6 +404,8 @@ class FileListWidget(QWidget):
             text_edit.setHorizontalScrollBarPolicy(Qt.ScrollBarAlwaysOff)
             text_edit.setFixedHeight(28)  # 设置固定高度
             text_edit.setTextInteractionFlags(Qt.NoTextInteraction)  # 禁止文本交互，解决点击问题
+            # 设置鼠标悬停时显示手型光标
+            text_edit.setCursor(Qt.PointingHandCursor)
             
             # 根据是否是文件夹设置不同的ObjectName和样式
             if is_folder:
@@ -409,12 +417,17 @@ class FileListWidget(QWidget):
             font = QFont("Courier New", 10)  # 使用等宽字体，这种字体对特殊字符显示更好
             font.setStyleStrategy(QFont.PreferAntialias)  # 添加抗锯齿
             text_edit.setFont(font)
-            text_edit.setStyleSheet("background-color: transparent; margin-left: 5px; padding: 2px; font-family: 'Courier New', monospace; border: none;")
+            # 为命名示范列设置#CBA057文字颜色
+            text_edit.setStyleSheet("background-color: transparent; margin-left: 5px; padding: 2px; font-family: 'Courier New', monospace; border: none; color: #CBA057;")
             
             # 创建编辑按钮
             edit_button = QPushButton("Edit")
             edit_button.setObjectName("editButton")
-            edit_button.setFixedWidth(60)
+            edit_button.setFixedWidth(120)
+            # 设置编辑按钮样式：背景色#CBA057，字体颜色为白色
+            edit_button.setStyleSheet("background-color: #CBA057; color: white; border-radius: 3px;")
+            # 设置鼠标悬停时显示手型光标
+            edit_button.setCursor(Qt.PointingHandCursor)
             
             # 连接按钮信号
             edit_button.clicked.connect(lambda checked, name=file_name: self.edit_button_clicked.emit(name))
@@ -436,6 +449,8 @@ class FileListWidget(QWidget):
             text_edit.setHorizontalScrollBarPolicy(Qt.ScrollBarAlwaysOff)
             text_edit.setFixedHeight(28)  # 设置固定高度
             text_edit.setTextInteractionFlags(Qt.NoTextInteraction)  # 禁止文本交互，解决点击问题
+            # 设置鼠标悬停时显示手型光标
+            text_edit.setCursor(Qt.PointingHandCursor)
             
             # 设置字体和样式
             font = QFont("Courier New", 10)  # 使用等宽字体，这种字体对特殊字符显示更好
@@ -466,11 +481,10 @@ class FileListWidget(QWidget):
         self.file_list.addItem(item)
         self.file_list.setItemWidget(item, item_widget)
         
-        # 调整项高度，给予足够空间
-        item.setSizeHint(item_widget.sizeHint())
-        # 确保高度足够
-        min_height = max(36, item_widget.sizeHint().height())
-        item.setSizeHint(QSize(item_widget.sizeHint().width(), min_height))
+        # 调整项高度 - 确保所有列表项高度一致
+        # 使用固定高度，而不是根据内容自适应
+        fixed_height = 48  # 固定高度值
+        item.setSizeHint(QSize(item_widget.width(), fixed_height))
     
     def set_as_result_list(self, is_result=True):
         """
@@ -489,44 +503,58 @@ class FileListWidget(QWidget):
             file_name (str): 文件名
             new_data (dict): 新的文件数据
         """
-        # 如果文件不存在，添加它
-        if file_name not in self.files:
-            self.add_files([new_data])
+        # 防止无限递归
+        static_updating = getattr(self, '_updating_file', False)
+        if static_updating:
             return
-        
-        # 更新存储的数据
-        self.files[file_name].update(new_data)
-        
-        # 查找并更新列表项
-        for i in range(self.file_list.count()):
-            item = self.file_list.item(i)
-            item_data = item.data(Qt.UserRole)
             
-            if item_data and item_data.get('name') == file_name:
-                # 获取自定义部件
-                widget = self.file_list.itemWidget(item)
-                if widget:
-                    # 查找文件名文本编辑器
-                    text_edits = widget.findChildren(QTextEdit)
-                    if text_edits and len(text_edits) > 0:  # 第一个文本编辑器是文件名
-                        if 'new_name' in new_data:
-                            # 直接设置新的文件名
-                            new_name = new_data['new_name']
-                            text_edits[0].setText(new_name)
-                            
-                            # 设置字体样式
-                            font = QFont("Courier New", 10)
-                            font.setStyleStrategy(QFont.PreferAntialias)
-                            text_edits[0].setFont(font)
-                            
-                            # 如果是结果列表，设置特殊样式
-                            if self.is_result_list:
-                                text_edits[0].setObjectName("resultFileNameEdit")
-                                text_edits[0].setStyleSheet("background-color: transparent; margin-left: 5px; padding: 2px; font-family: 'Courier New', monospace; border: none; color: #4CAF50;")
+        self._updating_file = True
+        
+        try:
+            # 如果文件不存在，添加它
+            if file_name not in self.files:
+                # 检查是否只需要添加Edit按钮
+                if self.with_edit_button:
+                    self.add_edit_button_only([new_data])
+                else:
+                    self.add_files([new_data])
+                return
+            
+            # 更新存储的数据
+            self.files[file_name].update(new_data)
+            
+            # 查找对应的列表项
+            for i in range(self.file_list.count()):
+                item = self.file_list.item(i)
+                item_data = item.data(Qt.UserRole)
                 
-                # 更新项数据
-                item.setData(Qt.UserRole, self.files[file_name])
-                break
+                if item_data and item_data.get('name') == file_name:
+                    # 更新item关联的数据
+                    item.setData(Qt.UserRole, self.files[file_name])
+                    
+                    # 获取小部件
+                    item_widget = self.file_list.itemWidget(item)
+                    
+                    if item_widget:
+                        # 如果是编辑按钮模式且存在name，更新文本
+                        if self.with_edit_button and 'name' in new_data:
+                            # 查找文本编辑器
+                            text_edit = None
+                            for j in range(item_widget.layout().count()):
+                                widget = item_widget.layout().itemAt(j).widget()
+                                if isinstance(widget, QTextEdit):
+                                    text_edit = widget
+                                    break
+                            
+                            # 如果找到文本编辑器，更新文本
+                            if text_edit and text_edit.toPlainText() != new_data.get('name'):
+                                # 暂时断开信号避免循环
+                                text_edit.blockSignals(True)
+                                text_edit.setText(new_data.get('name'))
+                                text_edit.blockSignals(False)
+                    break
+        finally:
+            self._updating_file = False
     
     def update_files(self, file_data_map):
         """
@@ -567,6 +595,21 @@ class FileListWidget(QWidget):
         """
         清空文件列表
         """
+        # 先清空其他同步列表
+        for widget in self.synced_lists:
+            # 避免循环调用
+            widget.synced_lists = [w for w in widget.synced_lists if w != self]
+            # 清空文件列表
+            widget.files.clear()
+            widget.file_list.clear()
+            # 更新占位标签的可见性
+            if widget.accept_drops:
+                widget._update_placeholder_visibility()
+            # 恢复同步列表引用
+            if self not in widget.synced_lists:
+                widget.synced_lists.append(self)
+        
+        # 清空自己的文件列表
         self.files.clear()
         self.file_list.clear()
         
@@ -645,6 +688,39 @@ class FileListWidget(QWidget):
             obj: 产生事件的对象
             event: 事件
         """
+        # 处理鼠标进入和离开事件，用于显示和隐藏Edit按钮
+        if event.type() == QEvent.Enter and self.with_edit_button:
+            # 检查是否是列表项小部件
+            for i in range(self.file_list.count()):
+                item = self.file_list.item(i)
+                widget = self.file_list.itemWidget(item)
+                
+                if obj == widget:
+                    # 查找Edit按钮并显示
+                    for button in widget.findChildren(QPushButton, "editButton"):
+                        button.setVisible(True)
+                    return False  # 继续处理事件
+        
+        elif event.type() == QEvent.Leave and self.with_edit_button:
+            # 检查是否是列表项小部件
+            for i in range(self.file_list.count()):
+                item = self.file_list.item(i)
+                widget = self.file_list.itemWidget(item)
+                
+                if obj == widget:
+                    # 查找Edit按钮并隐藏
+                    for button in widget.findChildren(QPushButton, "editButton"):
+                        button.setVisible(False)
+                    return False  # 继续处理事件
+        
+        # 处理文本编辑框的焦点丢失事件
+        if isinstance(obj, QTextEdit) and event.type() == QEvent.FocusOut and obj.property("original_file_name"):
+            original_file_name = obj.property("original_file_name")
+            if original_file_name and original_file_name in self.files:
+                new_text = obj.toPlainText()
+                # 确保更新模型
+                self._on_text_edited(original_file_name, new_text)
+        
         # 处理Del键删除选中项
         if obj == self.file_list and event.type() == QEvent.KeyPress:
             # 转换为键盘事件并检查是否是Delete键
@@ -690,7 +766,7 @@ class FileListWidget(QWidget):
                         if item_data:
                             self._open_file(item_data)
                     
-                    return True  # 事件已处理
+                    return False  # 不阻止事件继续传递，以便编辑功能正常工作
         
         # 其他事件由默认处理器处理
         return super().eventFilter(obj, event)
@@ -840,8 +916,34 @@ class FileListWidget(QWidget):
         # 如果没有选中的项，返回
         if not selected_items:
             return
-            
-        # 删除选中的项
+        
+        # 收集要删除的索引
+        indices_to_delete = [self.file_list.row(item) for item in selected_items]
+        
+        # 先在其他列表中删除相同索引的项
+        for widget in self.synced_lists:
+            # 确保其他列表具有足够的项目
+            if widget.file_list.count() >= max(indices_to_delete) + 1:
+                # 从最大索引开始删除，避免索引变化
+                for index in sorted(indices_to_delete, reverse=True):
+                    # 从列表中删除项目
+                    item = widget.file_list.item(index)
+                    if item:
+                        # 获取文件名
+                        file_data = item.data(Qt.UserRole)
+                        if file_data:
+                            file_name = file_data.get('name', '')
+                            # 从存储中删除
+                            if file_name in widget.files:
+                                del widget.files[file_name]
+                        # 从列表中删除
+                        widget.file_list.takeItem(index)
+                
+                # 更新占位标签的可见性
+                if widget.accept_drops:
+                    widget._update_placeholder_visibility()
+        
+        # 删除当前列表中选中的项
         for item in selected_items:
             # 获取文件名
             file_data = item.data(Qt.UserRole)
@@ -872,3 +974,310 @@ class FileListWidget(QWidget):
         else:
             # 其他键由父类处理
             super().keyPressEvent(event)
+
+    def add_edit_button_only(self, files):
+        """
+        仅添加编辑按钮到列表（不显示文件名）
+        
+        Args:
+            files (list): 文件列表，每个元素是一个字典，包含name和path属性
+        """
+        for file_data in files:
+            try:
+                file_name = file_data.get('name', '')
+                
+                # 如果文件已存在，跳过
+                if file_name in self.files:
+                    continue
+                
+                # 存储文件数据（但标记为未编辑状态）
+                file_data['edited'] = False
+                self.files[file_name] = file_data
+                
+                # 创建列表项
+                item = QListWidgetItem()
+                item.setData(Qt.UserRole, file_data)
+                
+                # 创建只包含编辑按钮的小部件
+                self._create_edit_button_item(item, file_data)
+            except Exception as e:
+                print(f"添加编辑按钮 '{file_data.get('name', '未知')}' 时出错: {str(e)}")
+                continue
+        
+        # 更新占位标签的可见性
+        if self.accept_drops:
+            self._update_placeholder_visibility()
+            
+    def _create_edit_button_item(self, item, file_data):
+        """
+        创建只包含编辑按钮的列表项小部件
+        
+        Args:
+            item: 列表项
+            file_data: 文件数据
+        """
+        file_name = file_data.get('name', '')
+        
+        # 创建小部件
+        item_widget = QWidget()
+        # 设置鼠标悬停时显示手型光标
+        item_widget.setCursor(Qt.PointingHandCursor)
+        # 强制布局更新
+        item_widget.setAttribute(Qt.WA_DontShowOnScreen, False)
+        
+        layout = QHBoxLayout(item_widget)
+        # 保持和其他列表项相同的内边距，确保对齐
+        layout.setContentsMargins(10, 8, 10, 8)
+        # 设置垂直居中
+        layout.setAlignment(Qt.AlignCenter)
+        
+        # 创建编辑按钮
+        edit_button = QPushButton("Edit")
+        edit_button.setObjectName("editButton")
+        # 设置最小宽度，确保按钮不会太小
+        edit_button.setMinimumWidth(100)
+        # 设置按钮策略，允许水平扩展
+        edit_button.setSizePolicy(QSizePolicy.Expanding, QSizePolicy.Fixed)
+        # 设置固定高度
+        edit_button.setFixedHeight(30)
+        # 设置鼠标悬停时显示手型光标
+        edit_button.setCursor(Qt.PointingHandCursor)
+        # 设置编辑按钮样式：背景色#CBA057，字体颜色为白色
+        edit_button.setStyleSheet("background-color: #CBA057; color: white; border-radius: 3px;")
+        
+        # 保存原始文件名到按钮的属性中
+        edit_button.setProperty("file_name", file_name)
+        
+        # 连接按钮信号到自定义槽，使用更安全的连接方式
+        edit_button.clicked.connect(lambda: self._on_edit_button_clicked(file_name, item_widget))
+        
+        # 初始状态下隐藏编辑按钮
+        edit_button.setVisible(False)
+        
+        # 添加到布局并让按钮填满可用空间
+        layout.addWidget(edit_button, 1)
+        
+        # 强制布局刷新
+        layout.invalidate()
+        layout.activate()
+        
+        # 设置列表项和小部件
+        self.file_list.addItem(item)
+        self.file_list.setItemWidget(item, item_widget)
+        
+        # 调整项高度 - 确保所有列表项高度一致
+        # 使用固定高度，与_create_item_widget中保持一致
+        fixed_height = 48  # 固定高度值
+        item.setSizeHint(QSize(item_widget.width(), fixed_height))
+        
+        # 强制更新布局，确保按钮正确显示
+        item_widget.updateGeometry()
+        edit_button.updateGeometry()
+        
+        # 安装事件过滤器，处理鼠标进入和离开事件
+        item_widget.installEventFilter(self)
+    
+    def _on_edit_button_clicked(self, file_name, item_widget):
+        """
+        编辑按钮点击处理
+        
+        Args:
+            file_name (str): 文件名
+            item_widget (QWidget): 列表项小部件
+        """
+        # 通知控制器
+        self.edit_button_clicked.emit(file_name)
+        
+        # 移除旧的布局中所有控件
+        while item_widget.layout().count():
+            item = item_widget.layout().takeAt(0)
+            if item.widget():
+                item.widget().deleteLater()
+        
+        # 保持布局边距一致，确保对齐
+        item_widget.layout().setContentsMargins(10, 8, 10, 8)
+        
+        # 创建文本编辑框
+        text_edit = QTextEdit(file_name)
+        text_edit.setObjectName("fileNameEdit")
+        text_edit.setFrameStyle(0)  # 无边框
+        text_edit.setVerticalScrollBarPolicy(Qt.ScrollBarAlwaysOff)
+        text_edit.setHorizontalScrollBarPolicy(Qt.ScrollBarAlwaysOff)
+        text_edit.setFixedHeight(28)  # 设置固定高度
+        
+        # 设置字体和样式
+        font = QFont("Courier New", 10)
+        font.setStyleStrategy(QFont.PreferAntialias)
+        text_edit.setFont(font)
+        text_edit.setStyleSheet("background-color: transparent; margin-left: 5px; padding: 2px; font-family: 'Courier New', monospace; border: none; color: #CBA057;")
+        
+        # 允许文本交互
+        text_edit.setTextInteractionFlags(Qt.TextEditorInteraction)
+        
+        # 保存原始文件名
+        text_edit.setProperty("original_file_name", file_name)
+        
+        # 添加到布局
+        item_widget.layout().addWidget(text_edit)
+        
+        # 设置焦点到文本编辑框
+        text_edit.setFocus()
+        
+        # 选中所有文本
+        text_edit.selectAll()
+        
+        # 文本变更时保存到文件数据
+        text_edit.textChanged.connect(lambda: self._on_text_edited(file_name, text_edit.toPlainText()))
+        
+        # 安装事件过滤器以处理焦点丢失事件
+        text_edit.installEventFilter(self)
+        
+    def _on_text_edited(self, original_file_name, new_text):
+        """
+        文本编辑处理
+        
+        Args:
+            original_file_name (str): 原始文件名
+            new_text (str): 新文本
+        """
+        # 防止无限递归
+        static_updating = getattr(self, '_updating_text', False)
+        if static_updating:
+            return
+            
+        self._updating_text = True
+        
+        try:
+            # 更新存储的文件数据
+            if original_file_name in self.files:
+                self.files[original_file_name]['edited'] = True
+                self.files[original_file_name]['new_name'] = new_text
+                
+                # 尝试更新重命名控制器
+                from PySide6.QtWidgets import QApplication
+                main_window = QApplication.activeWindow()
+                
+                if main_window and hasattr(main_window, 'rename_controller'):
+                    # 从UI中获取重命名控制器
+                    rename_controller = main_window.rename_controller
+                    
+                    # 更新重命名模型中的示例 - 不需要发信号
+                    rename_controller.rename_model.add_example(original_file_name, new_text, emit_signal=False)
+        finally:
+            self._updating_text = False
+
+    def sync_with(self, other_list_widgets):
+        """
+        与其他文件列表组件同步滚动和选择
+        
+        Args:
+            other_list_widgets (list): 其他FileListWidget实例列表
+        """
+        self.synced_lists = [widget for widget in other_list_widgets if widget != self]
+        
+        # 断开旧连接，避免多次连接
+        try:
+            self.file_list.verticalScrollBar().valueChanged.disconnect(self._sync_scroll)
+        except:
+            pass  # 如果之前没有连接，会抛出异常，忽略它
+            
+        # 连接滚动信号
+        self.file_list.verticalScrollBar().valueChanged.connect(self._sync_scroll)
+        
+        # 断开旧选择信号连接
+        try:
+            self.file_list.itemSelectionChanged.disconnect(self._sync_selection)
+        except:
+            pass  # 如果之前没有连接，忽略异常
+            
+        # 连接选择信号
+        self.file_list.itemSelectionChanged.connect(self._sync_selection)
+        
+        # 确保初始同步
+        self._sync_selection()
+        scroll_value = self.file_list.verticalScrollBar().value()
+        if scroll_value > 0:
+            self._sync_scroll(scroll_value)
+        
+    def _sync_scroll(self, value):
+        """
+        同步滚动条位置
+        
+        Args:
+            value (int): 滚动条位置值
+        """
+        # 防止无限递归
+        if getattr(self, '_is_syncing_scroll', False):
+            return
+            
+        self._is_syncing_scroll = True
+        
+        try:
+            # 计算可见区域
+            viewport_rect = self.file_list.viewport().rect()
+            
+            # 找到第一个可见项和偏移量
+            first_visible_index = -1
+            offset_percent = 0
+            
+            # 找到第一个完全可见的项
+            for i in range(self.file_list.count()):
+                item_rect = self.file_list.visualItemRect(self.file_list.item(i))
+                # 如果项目在可见区域内
+                if viewport_rect.contains(item_rect.topLeft()):
+                    first_visible_index = i
+                    # 计算第一个可见项相对于滚动条的偏移比例
+                    scrollbar = self.file_list.verticalScrollBar()
+                    total_range = scrollbar.maximum() - scrollbar.minimum()
+                    if total_range > 0:
+                        offset_percent = value / total_range
+                    break
+            
+            # 如果没有找到可见项，使用滚动条的比例值
+            if first_visible_index == -1:
+                scrollbar = self.file_list.verticalScrollBar()
+                total_range = scrollbar.maximum() - scrollbar.minimum()
+                if total_range > 0:
+                    offset_percent = value / total_range
+                # 如果列表为空或者滚动到了底部，同步滚动条值即可
+                for widget in self.synced_lists:
+                    if widget.file_list.count() > 0:
+                        target_value = int(offset_percent * (widget.file_list.verticalScrollBar().maximum() - widget.file_list.verticalScrollBar().minimum()))
+                        widget.file_list.verticalScrollBar().setValue(target_value)
+            else:
+                # 同步到其他列表时，先将滚动条拉到相同比例位置，再滚动到对应项
+                for widget in self.synced_lists:
+                    if widget.file_list.count() > first_visible_index:
+                        # 同步滚动条相对位置
+                        target_scrollbar = widget.file_list.verticalScrollBar()
+                        target_range = target_scrollbar.maximum() - target_scrollbar.minimum()
+                        if target_range > 0:
+                            target_value = int(offset_percent * target_range)
+                            target_scrollbar.setValue(target_value)
+                        
+                        # 然后滚动到相同索引的项
+                        widget.file_list.scrollToItem(
+                            widget.file_list.item(first_visible_index),
+                            QAbstractItemView.PositionAtTop
+                        )
+        
+        finally:
+            self._is_syncing_scroll = False
+            
+    def _sync_selection(self):
+        """
+        同步选择状态
+        """
+        # 获取当前选中项索引
+        selected_indices = [self.file_list.row(item) for item in self.file_list.selectedItems()]
+        
+        # 同步到其他列表
+        for widget in self.synced_lists:
+            # 如果其他列表有相同数量的项，同步选择
+            if widget.file_list.count() == self.file_list.count():
+                widget.file_list.blockSignals(True)
+                widget.file_list.clearSelection()
+                for index in selected_indices:
+                    if 0 <= index < widget.file_list.count():
+                        widget.file_list.item(index).setSelected(True)
+                widget.file_list.blockSignals(False)

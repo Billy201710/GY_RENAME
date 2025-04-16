@@ -57,32 +57,15 @@ class RenameController(QObject):
         Returns:
             tuple: (成功标志, 结果或错误消息)
         """
-        from PySide6.QtWidgets import QInputDialog, QLineEdit
-        
-        # 获取新文件名
-        new_name, ok = QInputDialog.getText(
-            None,
-            "编辑文件名",
-            f"请输入 '{file_name}' 的新名称:",
-            QLineEdit.Normal,
-            file_name
-        )
-        
-        # 如果用户取消或输入为空，返回
-        if not ok or not new_name:
-            return False, "用户取消操作"
-        
-        # 如果文件名未变化，返回
-        if new_name == file_name:
-            return False, "文件名未变化"
-        
-        # 添加示例
-        result = self.rename_model.add_example(file_name, new_name)
+        # 只需记录这个文件名已被选为示例
+        # 文本实际编辑由FileListWidget中的文本编辑框处理
+        # 添加示例记录（初始值为原始文件名，等待用户编辑后更新）
+        result = self.rename_model.add_example(file_name, file_name)
         
         if result:
-            return True, {"original_name": file_name, "new_name": new_name}
+            return True, {"original_name": file_name, "new_name": file_name}
         else:
-            return False, "添加示例失败"
+            return False, "准备编辑示例失败"
     
     @Slot(list, list)
     def analyze_naming_pattern(self, original_files, example_files):

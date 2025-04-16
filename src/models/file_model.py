@@ -13,19 +13,21 @@ class FileItem(QObject):
     nameChanged = Signal(str)
     pathChanged = Signal(str)
     
-    def __init__(self, name="", path="", parent=None):
+    def __init__(self, name="", path="", is_folder=False, parent=None):
         """
         初始化文件项
         
         Args:
             name (str): 文件名
             path (str): 文件路径
+            is_folder (bool): 是否为文件夹
             parent: 父对象
         """
         super().__init__(parent)
         self._name = name
         self._path = path
         self._original_name = name  # 保存原始文件名，用于恢复
+        self.is_folder = is_folder
     
     # 文件名属性
     def _get_name(self):
@@ -60,18 +62,36 @@ class FileItem(QObject):
     
     # 转换为字典
     def to_dict(self):
+        """
+        转换为字典
+        
+        Returns:
+            dict: 包含文件信息的字典
+        """
         return {
             'name': self._name,
             'path': self._path,
-            'original_name': self._original_name
+            'original_name': self._original_name,
+            'is_folder': self.is_folder
         }
     
     # 从字典创建
     @classmethod
     def from_dict(cls, data, parent=None):
+        """
+        从字典创建文件项
+        
+        Args:
+            data (dict): 文件信息字典
+            parent: 父对象
+            
+        Returns:
+            FileItem: 文件项实例
+        """
         item = cls(
             name=data.get('name', ''),
             path=data.get('path', ''),
+            is_folder=data.get('is_folder', False),
             parent=parent
         )
         item._original_name = data.get('original_name', item._name)
@@ -99,13 +119,14 @@ class FileModel(QObject):
         self._files = {}  # 存储文件，键为文件名
     
     @Slot(str, str)
-    def add_file(self, path, name=None):
+    def add_file(self, path, name=None, is_folder=False):
         """
         添加文件
         
         Args:
             path (str): 文件路径
             name (str, optional): 文件名，如果为None则使用路径中的文件名
+            is_folder (bool): 是否为文件夹
             
         Returns:
             FileItem: 添加的文件项，如果文件已存在则返回None
@@ -119,7 +140,7 @@ class FileModel(QObject):
             return None
         
         # 创建新文件项
-        file_item = FileItem(name=name, path=path, parent=self)
+        file_item = FileItem(name=name, path=path, is_folder=is_folder, parent=self)
         
         # 添加到文件集合
         self._files[name] = file_item

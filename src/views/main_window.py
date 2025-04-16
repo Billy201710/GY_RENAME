@@ -78,12 +78,85 @@ class MainWindow(QMainWindow):
         style_file_path = os.path.join("assets", "styles", "app_style.qss")
         
         if os.path.exists(style_file_path):
-            style_file = QFile(style_file_path)
-            if style_file.open(QFile.ReadOnly | QFile.Text):
-                stream = QTextStream(style_file)
-                style_sheet = stream.readAll()
-                self.setStyleSheet(style_sheet)
-                style_file.close()
+            try:
+                style_file = QFile(style_file_path)
+                if style_file.open(QFile.ReadOnly | QFile.Text):
+                    stream = QTextStream(style_file)
+                    style_sheet = stream.readAll()
+                    
+                    # 添加滚动条全局样式
+                    style_sheet += """
+                    /* 全局滚动条样式 */
+                    QScrollBar:vertical {
+                        background-color: #1E1E1E;
+                        width: 12px;
+                        margin: 0px;
+                        border-radius: 6px;
+                    }
+                    
+                    QScrollBar::handle:vertical {
+                        background-color: #3A3A3A;
+                        min-height: 20px;
+                        border-radius: 6px;
+                    }
+                    
+                    QScrollBar::handle:vertical:hover {
+                        background-color: #505050;
+                    }
+                    
+                    QScrollBar::handle:vertical:pressed {
+                        background-color: #606060;
+                    }
+                    
+                    QScrollBar::add-line:vertical, QScrollBar::sub-line:vertical {
+                        height: 0px;
+                        background: none;
+                    }
+                    
+                    QScrollBar::add-page:vertical, QScrollBar::sub-page:vertical {
+                        background: none;
+                    }
+                    
+                    /* 水平滚动条样式 */
+                    QScrollBar:horizontal {
+                        background-color: #1E1E1E;
+                        height: 12px;
+                        margin: 0px;
+                        border-radius: 6px;
+                    }
+                    
+                    QScrollBar::handle:horizontal {
+                        background-color: #3A3A3A;
+                        min-width: 20px;
+                        border-radius: 6px;
+                    }
+                    
+                    QScrollBar::handle:horizontal:hover {
+                        background-color: #505050;
+                    }
+                    
+                    QScrollBar::handle:horizontal:pressed {
+                        background-color: #606060;
+                    }
+                    
+                    QScrollBar::add-line:horizontal, QScrollBar::sub-line:horizontal {
+                        width: 0px;
+                        background: none;
+                    }
+                    
+                    QScrollBar::add-page:horizontal, QScrollBar::sub-page:horizontal {
+                        background: none;
+                    }
+                    """
+                    
+                    # 尝试设置样式表并捕获异常
+                    valid = self.setStyleSheet(style_sheet)
+                    if not valid:
+                        print(f"警告: 样式表可能包含语法错误")
+                    
+                    style_file.close()
+            except Exception as e:
+                print(f"加载样式表时出错: {str(e)}")
     
     def _create_ui(self):
         """
@@ -132,6 +205,11 @@ class MainWindow(QMainWindow):
         self.analysis_files_widget = FileListWidget("")
         # 设置分析结果列表为结果列表，使文本显示为绿色
         self.analysis_files_widget.set_as_result_list(True)
+        
+        # 确保文件列表正确显示所有内容
+        self.original_files_widget.setContentsMargins(0, 0, 0, 0)
+        self.example_files_widget.setContentsMargins(0, 0, 0, 0) 
+        self.analysis_files_widget.setContentsMargins(0, 0, 0, 0)
         
         # 添加表头和列表到各自布局
         original_layout.addWidget(original_header)
@@ -401,12 +479,8 @@ class MainWindow(QMainWindow):
         """
         重置箭头状态
         """
-        # 恢复箭头颜色为默认
-        self.arrow_label1.setStyleSheet("font-size: 32px; color: #a0a0a0; padding: 10px 0; font-weight: bold;")
-        self.arrow_label2.setStyleSheet("font-size: 32px; color: #a0a0a0; padding: 10px 0; font-weight: bold;")
-        # 重置文本确保一致性
-        self.arrow_label1.setText("➔")
-        self.arrow_label2.setText("➔")
+        # 箭头始终保持灰色，不需要重置
+        pass
     
     @Slot()
     def _on_refresh_action(self):
@@ -581,7 +655,8 @@ class MainWindow(QMainWindow):
         step_container.setObjectName("stepContainer")
         step_layout = QHBoxLayout(step_container)
         step_layout.setContentsMargins(0, 0, 0, 0)
-        
+
+
         # 添加箭头图标
         arrow_icon = QLabel("➔")
         arrow_icon.setAlignment(Qt.AlignCenter)
@@ -895,8 +970,7 @@ class MainWindow(QMainWindow):
         """清空原始文件列表"""
         self.original_files_widget.clear()
         self.file_controller.clear_files()
-        # 重置第一个箭头状态
-        self.arrow_label1.setStyleSheet("font-size: 32px; color: #a0a0a0; padding: 10px 0; font-weight: bold;")
+        # 移除箭头状态修改
         self.status_bar.showMessage("已清空原始文件列表")
     
     def _on_add_example_files(self):
@@ -915,8 +989,7 @@ class MainWindow(QMainWindow):
         """清空示例文件列表"""
         self.example_files_widget.clear()
         self.rename_controller.clear_examples()
-        # 重置第二个箭头状态
-        self.arrow_label2.setStyleSheet("font-size: 32px; color: #a0a0a0; padding: 10px 0; font-weight: bold;")
+        # 移除箭头状态修改
         self.status_bar.showMessage("已清空示例文件列表")
     
     def _on_analyze_button_clicked(self):
@@ -949,18 +1022,15 @@ class MainWindow(QMainWindow):
         """
         更新步骤1完成状态
         """
-        if files and len(files) > 0:
-            self.arrow_label1.setText("➔")
-            self.arrow_label1.setStyleSheet("font-size: 32px; color: #4CAF50; padding: 10px 0; font-weight: bold;")
+        # 箭头始终保持灰色，不再根据状态变化
+        pass
     
     def _update_step2_completed(self, *args):
         """
         更新步骤2完成状态
         """
-        examples = self.rename_controller.get_example_files()
-        if examples and len(examples) > 0:
-            self.arrow_label2.setText("➔")
-            self.arrow_label2.setStyleSheet("font-size: 32px; color: #4CAF50; padding: 10px 0; font-weight: bold;")
+        # 箭头始终保持灰色，不再根据状态变化
+        pass
     
     def _update_step3_completed(self, *args):
         """

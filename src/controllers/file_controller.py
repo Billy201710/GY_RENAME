@@ -40,7 +40,8 @@ class FileController(QObject):
         添加文件
         
         Args:
-            paths (list): 文件路径列表，可以是字符串列表或QUrl列表
+            paths (list): 文件路径列表，可以是字符串列表或QUrl列表，
+                          也可以是包含path和is_folder属性的字典列表
             
         Returns:
             list: 添加的文件数据列表
@@ -48,33 +49,59 @@ class FileController(QObject):
         file_dicts = []
         
         # 处理每个路径
-        for path in paths:
-            # 如果是QUrl，转换为本地路径
-            if hasattr(path, 'toLocalFile'):
-                path = path.toLocalFile()
-            
-            # 检查是否是文件
-            if os.path.isfile(path):
-                # 获取文件名和路径
-                name = os.path.basename(path)
+        for path_item in paths:
+            try:
+                # 初始化变量
+                path = None
+                is_folder = False
                 
-                # 添加到模型
-                file_item = self.file_model.add_file(path, name)
-                
-                # 如果成功添加，添加到结果列表
-                if file_item:
-                    file_dicts.append(file_item.to_dict())
-            
-            # 如果是目录，获取目录中的所有文件
-            elif os.path.isdir(path):
-                for root, _, files in os.walk(path):
-                    for file in files:
-                        file_path = os.path.join(root, file)
+                # 如果是字典，直接获取信息
+                if isinstance(path_item, dict):
+                    path = path_item.get('path', '')
+                    is_folder = path_item.get('is_folder', False)
+                    # 字典可能已经包含所有需要的信息
+                    if 'name' in path_item and 'path' in path_item:
+                        file_dicts.append(path_item)
                         # 添加到模型
-                        file_item = self.file_model.add_file(file_path)
-                        # 如果成功添加，添加到结果列表
-                        if file_item:
-                            file_dicts.append(file_item.to_dict())
+                        self.file_model.add_file(path_item['path'], path_item['name'], is_folder=is_folder)
+                        continue
+                # 如果是QUrl，转换为本地路径
+                elif hasattr(path_item, 'toLocalFile'):
+                    path = path_item.toLocalFile()
+                else:
+                    path = path_item
+                
+                # 如果路径为空，跳过
+                if not path:
+                    continue
+                
+                # 判断是否是文件夹
+                if is_folder or os.path.isdir(path):
+                    # 添加文件夹本身
+                    folder_name = os.path.basename(path)
+                    file_item = {
+                        'name': folder_name,
+                        'path': path,
+                        'is_folder': True
+                    }
+                    file_dicts.append(file_item)
+                    # 添加到模型
+                    self.file_model.add_file(path, folder_name, is_folder=True)
+                    
+                # 如果是文件
+                elif os.path.isfile(path):
+                    # 获取文件名和路径
+                    name = os.path.basename(path)
+                    
+                    # 添加到模型
+                    file_item = self.file_model.add_file(path, name, is_folder=False)
+                    
+                    # 如果成功添加，添加到结果列表
+                    if file_item:
+                        file_dicts.append(file_item.to_dict())
+            except Exception as e:
+                print(f"添加文件/文件夹时出错: {str(e)}")
+                continue
         
         # 如果有文件添加，发出信号
         if file_dicts:

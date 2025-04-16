@@ -279,14 +279,16 @@ QListWidget {
     background-color: #121212;  /* 深黑色背景 */
     border: none;
     border-radius: 0px;
-    padding: 5px;
+    padding: 0px;  /* 减少内边距 */
     alternate-background-color: #181818;
+    outline: none;  /* 移除选中时的焦点框 */
 }
 
 QListWidget::item {
     border-bottom: 1px solid #2a2a2a;
-    padding: 5px;
-    min-height: 30px; /* 增加行高 */
+    padding: 2px;  /* 减少内边距 */
+    min-height: 36px; /* 增加行高 */
+    background-color: transparent;  /* 确保背景透明 */
 }
 
 QListWidget::item:selected {
@@ -567,22 +569,54 @@ QSplitter::handle:hover {
 
 /* 文件图标样式 */
 QLabel#fileIcon {
-    min-width: 24px;
-    max-width: 24px;
-    min-height: 24px;
-    max-height: 24px;
+    min-width: 20px;
+    max-width: 20px;
+    min-height: 20px;
+    max-height: 20px;
+    margin-right: 5px;  /* 添加右边距 */
+    background-color: transparent;  /* 确保背景透明 */
+    padding: 0px;
+    border: none;
+}
+
+/* 文件夹图标样式 */
+QLabel#folderIcon {
+    min-width: 20px;
+    max-width: 20px;
+    min-height: 20px;
+    max-height: 20px;
+    margin-right: 5px;  /* 添加右边距 */
+    background-color: transparent;  /* 确保背景透明 */
+    padding: 0px;
+    border: none;
 }
 
 /* 文件名标签样式 */
 QLabel#fileName {
     color: #f0f0f0;
     font-size: 14px;
+    font-family: Consolas, 'Courier New', monospace;  /* 使用等宽字体显示文件名 */
+    background-color: transparent;  /* 确保背景透明 */
+    padding: 2px;  /* 增加内边距，提高文字显示质量 */
+}
+
+/* 文件夹名标签样式 */
+QLabel#folderName {
+    color: #f0c040;  /* 金色文本，区分于普通文件 */
+    font-size: 14px;
+    font-family: Consolas, 'Courier New', monospace;  /* 使用等宽字体显示文件名 */
+    font-weight: bold;
+    background-color: transparent;  /* 确保背景透明 */
+    padding: 2px;  /* 增加内边距，提高文字显示质量 */
 }
 
 /* 结果文件名标签样式 */
 QLabel#resultFileName {
     color: #4CAF50;  /* 绿色文本 */
     font-size: 14px;
+    font-family: Consolas, 'Courier New', monospace;  /* 使用等宽字体显示文件名 */
+    background-color: transparent;  /* 确保背景透明 */
+    padding: 2px;  /* 增加内边距，提高文字显示质量 */
 }
 
 /* 输入框样式 */
@@ -756,6 +790,45 @@ QComboBox#apiProviderComboBox, QComboBox#apiModelComboBox {
 QDialogButtonBox#dialogButtonBox {
     margin-top: 15px;
 } 
+
+/* 文件名文本编辑器样式 */
+QTextEdit#fileNameEdit {
+    background-color: transparent;
+    color: #f0f0f0;
+    font-size: 14px;
+    font-family: 'Courier New', monospace;  /* 使用等宽字体显示文件名 */
+    border: none;
+    padding: 2px;
+}
+
+/* 文件夹名文本编辑器样式 */
+QTextEdit#folderNameEdit {
+    background-color: transparent;
+    color: #f0c040;  /* 金色文本，区分于普通文件 */
+    font-size: 14px;
+    font-family: 'Courier New', monospace;  /* 使用等宽字体显示文件名 */
+    font-weight: bold;
+    border: none;
+    padding: 2px;
+}
+
+/* 结果文件名文本编辑器样式 */
+QTextEdit#resultFileNameEdit {
+    background-color: transparent;
+    color: #4CAF50;  /* 绿色文本 */
+    font-size: 14px;
+    font-family: 'Courier New', monospace;  /* 使用等宽字体显示文件名 */
+    border: none;
+    padding: 2px;
+}
+
+/* 禁用文本编辑器的滚动条 */
+QTextEdit#fileNameEdit::-webkit-scrollbar,
+QTextEdit#folderNameEdit::-webkit-scrollbar,
+QTextEdit#resultFileNameEdit::-webkit-scrollbar {
+    width: 0px;
+    height: 0px;
+}
 
 
 
